@@ -27,18 +27,21 @@ def parse_newsapi(article: dict) -> dict:
 def parse_cryptocompare(article: dict) -> dict:
     """Normaliza un articulo de CryptoCompare al esquema definido"""
     return {
-        "id": generate_id(article.get("TITLE", "")),
-        "title": article.get("TITLE"),
-        "description": article.get("SUBTITLE"),
-        "content": article.get("BODY"),
-        "url": article.get("URL"),
-        "source": article.get("SOURCE_INFO", {}).get("NAME"),
-        "published_at": datetime.fromtimestamp(article["PUBLISHED_ON"]) if article.get("PUBLISHED_ON") is not None else None,
+        "id": generate_id(article.get("title", "")),
+        "title": article.get("title") or "Untitled",
+        "description": article.get("subtitle") or "",
+        "content": article.get("body") or "",
+        "url": article.get("url"),
+        "source": article.get("source_info", {}).get("name"),
+        "published_at": (
+            datetime.fromtimestamp(article["published_on"])
+            if article.get("published_on") is not None else None
+        ),
         "collected_at": datetime.now(),
         "extra": {
-            "lang": article.get("LANG"),
-            "keywords": article.get("KEYWORDS"),
-            "image": article.get("IMAGE_URL"),
-            "source_id": article.get("SOURCE_INFO", {}).get("ID"),
+            "lang": article.get("lang") or "unknown",
+            "keywords": article.get("keywords", []),
+            "image": article.get("image_url") or "",
+            "source_id": article.get("source_id"),
         },
     }

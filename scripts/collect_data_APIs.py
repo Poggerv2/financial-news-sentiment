@@ -5,13 +5,16 @@ import requests
 from dotenv import load_dotenv
 from datetime import datetime
 from pathlib import Path
-from parser import parse_newsapi, parse_cryptocompare
+from parser_APIs import parse_newsapi, parse_cryptocompare
+from db import get_mongo_collection
 
 data_path = Path(__file__).resolve().parents[1] / "data" / "raw"
 data_path.mkdir(parents=True, exist_ok=True)
 
 load_dotenv()
 newsapi_key = os.getenv("NEWS_API_KEY")
+
+articles = get_mongo_collection()
 
 # requests
 def fetch_newsapi(query='bitcoin', language='en', page_size=100):
@@ -42,6 +45,12 @@ def save_json(data, source):
         json.dump(data, f, ensure_ascii=False, default=str, indent=2)
     print(f"Saved {len(data)} articles in {file_path}")
 
+def save_mongo(data):
+    if not data:
+        return
+    articles.insert_many(data)
+    print(f"Inserted {len(data)} documents into MongoDB")
+
 # main
 def main():
     all_articles = []
@@ -51,6 +60,7 @@ def main():
         raw_newsapi = fetch_newsapi()
         parsed_newsapi = [parse_newsapi(a) for a in raw_newsapi]
         save_json(parsed_newsapi, "newsapi")
+        save_mongo(parsed_newsapi)
         all_articles.extend(parsed_newsapi)
     except Exception as e:
         print(f"Error NewsAPI: {e}")
@@ -60,6 +70,7 @@ def main():
         raw_crypto = fetch_cryptocompare()
         parsed_crypto = [parse_cryptocompare(a) for a in raw_crypto]
         save_json(parsed_crypto, "cryptocompare")
+        save_mongo(parsed_crypto)
         all_articles.extend(parsed_crypto)
     except Exception as e:
         print(f"Error CryptoCompare: {e}")
