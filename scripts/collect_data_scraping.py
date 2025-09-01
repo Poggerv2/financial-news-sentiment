@@ -3,7 +3,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from pathlib import Path
 import json
-from parser_scraping import parse_cronista
+import time
+from parser_scraping import parse_cronista, parse_coindesk
 from db import get_mongo_collection
 
 BASE_URL = "https://www.cronista.com"
@@ -67,6 +68,54 @@ def fetch_cronista():
 
     return articles
 
+def collect_coindesk(max_articles=50, page_size=16):
+    session = requests.Session()
+    base_url = "https://www.coindesk.com/api/v1/articles/timeline"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.coindesk.com/latest-crypto-news",
+        "X-Requested-With": "XMLHttpRequest",
+        "Origin": "https://www.coindesk.com",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Dest": "empty",
+    }
+
+    articles = []
+    last_id = None
+    last_display_date = None
+
+    while len(articles) < max_articles:
+        params = {"size": page_size, "lang": "en"}
+        if last_id and last_display_date:
+            params["lastId"] = last_id
+            params["lastDisplayDate"] = last_display_date
+
+        response = session.get(base_url, headers=headers, params=params)
+        if response.status_code != 200:
+            print(f"Coindesk request failed: {response.status_code}")
+            break
+
+        data = response.json()
+        new_articles = data.get("articles", [])
+        if not new_articles:
+            break
+
+        for a in new_articles:
+            parsed = parse_coindesk(a)
+            articles.append(parsed)
+            time.sleep(0.3)
+
+        last_article = new_articles[-1]
+        last_id = last_article["_id"]
+        last_display_date = last_article["articleDates"]["displayDate"]
+
+    return articles[:max_articles]
+
+
 def save_json(data, source="cronista"):
     today = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_path = data_path / f"{source}_{today}.json"
@@ -80,12 +129,21 @@ def save_mongo(data):
     articles_col.insert_many(data)
     print(f"Insertados {len(data)} documentos en MongoDB")
 
+# --- Main ---
 def main():
-    raw_articles = fetch_cronista()
-    parsed_articles = [parse_cronista(a) for a in raw_articles]
-    save_json(parsed_articles)
-    save_mongo(parsed_articles)
-    print(f"Total artículos recolectados: {len(parsed_articles)}")
+    print("Recolectando Cronista...")
+    raw_cronista = fetch_cronista()
+    parsed_cronista = [parse_cronista(a) for a in raw_cronista]
+    save_json(parsed_cronista, "cronista")
+    save_mongo(parsed_cronista)
+
+    print("Recolectando Coindesk...")
+    raw_coindesk = collect_coindesk(max_articles=100)
+    save_json(raw_coindesk, "coindesk")
+    save_mongo(raw_coindesk)
+
+    print(f"Total artículos Cronista: {len(parsed_cronista)}, Coindesk: {len(raw_coindesk)}")
 
 if __name__ == "__main__":
     main()
+
