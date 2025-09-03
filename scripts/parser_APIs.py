@@ -25,23 +25,35 @@ def parse_newsapi(article: dict) -> dict:
 
 
 def parse_cryptocompare(article: dict) -> dict:
-    """Normaliza un articulo de CryptoCompare al esquema definido"""
+    title = article.get("TITLE") or "Untitled"
+    content = article.get("BODY") or ""
+    keywords = article.get("KEYWORDS", "").lower()
+
+    text_blob = " ".join([title.lower(), content.lower(), keywords])
+
+    relevance = (
+        text_blob.count("bitcoin") * 2 +
+        text_blob.count("BTC") * 1
+    )
+
     return {
-        "id": generate_id(article.get("title", "")),
-        "title": article.get("title") or "Untitled",
-        "description": article.get("subtitle") or "",
-        "content": article.get("body") or "",
-        "url": article.get("url"),
-        "source": article.get("source_info", {}).get("name"),
+        "id": generate_id(title),
+        "title": title,
+        "description": article.get("SUBTITLE") or "",
+        "content": content,
+        "url": article.get("URL"),
+        "source": article.get("SOURCE_DATA", {}).get("NAME"),
         "published_at": (
-            datetime.fromtimestamp(article["published_on"])
-            if article.get("published_on") is not None else None
+            datetime.fromtimestamp(article["PUBLISHED_ON"])
+            if article.get("PUBLISHED_ON") else None
         ),
         "collected_at": datetime.now(),
         "extra": {
-            "lang": article.get("lang") or "unknown",
-            "keywords": article.get("keywords", []),
-            "image": article.get("image_url") or "",
-            "source_id": article.get("source_id"),
+            "lang": article.get("LANG") or "unknown",
+            "keywords": article.get("KEYWORDS", "").split(",") if article.get("KEYWORDS") else [],
+            "image": article.get("IMAGE_URL") or "",
+            "source_id": article.get("SOURCE_ID"),
+            "score": article.get("SCORE"),
+            "bitcoin_relevance": relevance
         },
     }
