@@ -14,9 +14,7 @@ from parser_social import parse_reddit, parse_tweet
 from db import get_mongo_collection
 
 load_dotenv()
-#twitter
-bearer_token = os.getenv("bearer_token")
-#reddit
+
 client_id = os.getenv("client_id")
 client_secret = os.getenv("client_secret")
 user_agent = os.getenv("user_agent")
@@ -30,20 +28,6 @@ def collect_reddit_news(subreddit="CryptoCurrency", limit=100, flair="GENERAL-NE
     results = list(parse_reddit(subreddit, limit, flair))
     print(f"\nCollected {len(results)} reddit articles")
     return results
-
-def collect_twitter(query="bitcoin OR BTC OR crypto", limit=50):
-    client = tweepy.Client(bearer_token=bearer_token)
-
-    tweets = client.search_recent_tweets(
-        query=query,
-        max_results=min(limit, 50),
-        tweet_fields=["created_at", "public_metrics", "author_id"],
-        expansions="author_id",
-        user_fields=["username"]
-    )
-    
-    users_map = {u.id: u for u in tweets.includes["users"]} if hasattr(tweets, "includes") else {}
-    return [parse_tweet(tweet, users_map) for tweet in tweets.data]
 
 def save_json(data, source="cronista"):
     today = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -61,14 +45,12 @@ def save_mongo(data):
 # --- Main ---
 def main():
     reddit_data = collect_reddit_news("CryptoCurrency", limit=100)
-    # twitter_data = collect_twitter(limit=50)  # comentamos hasta que se restablezca la cuota
 
-    all_data = reddit_data  # + twitter_data cuando esté disponible
+    all_data = reddit_data
     save_json(all_data, source="social")
     save_mongo(all_data)
 
     print(f'Reddit: {len(reddit_data)}')
-    # print(f'Twitter: {len(twitter_data)}')
 
 if __name__ == "__main__":
     main()

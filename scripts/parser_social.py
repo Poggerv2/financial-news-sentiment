@@ -84,24 +84,3 @@ def parse_reddit(subreddit_name="CryptoCurrency", limit=100, flair="GENERAL-NEWS
                 "flair": post.link_flair_text
             }
         }
-
-
-def parse_tweet(tweet, users_map) -> dict:
-    user_info = users_map.get(tweet.author_id)
-    return {
-        "id": generate_id(tweet.id),
-        "title": tweet.text[:100],
-        "description": None,
-        "content": tweet.text,
-        "url": f"https://twitter.com/{user_info.username}/status/{tweet.id}" if user_info else None,
-        "source": f"Twitter/{user_info.username}" if user_info else "Twitter",
-        "published_at": tweet.created_at,
-        "collected_at": datetime.now(),
-        "extra": {
-            "author": user_info.username if user_info else None,
-            "retweets": tweet.public_metrics.get("retweet_count", 0),
-            "likes": tweet.public_metrics.get("like_count", 0),
-            "replies": tweet.public_metrics.get("reply_count", 0),
-            "quotes": tweet.public_metrics.get("quote_count", 0)
-        }
-    }

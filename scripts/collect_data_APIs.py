@@ -3,35 +3,18 @@ import os
 import json
 import time
 import requests
-from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from pathlib import Path
-from parser_APIs import parse_newsapi, parse_cryptocompare
+from parser_APIs import parse_cryptocompare
 from db import get_mongo_collection
+import logging
 
 # paths
 data_path = Path(__file__).resolve().parents[1] / "data" / "raw"
 data_path.mkdir(parents=True, exist_ok=True)
 
-load_dotenv()
-newsapi_key = os.getenv("NEWS_API_KEY")
 
 articles = get_mongo_collection()
-
-# requests
-def fetch_newsapi(query='bitcoin', language='en', page_size=100):
-    url = "https://newsapi.org/v2/everything"
-    params = {
-        "q": query,
-        "language": language,
-        "pageSize": page_size,
-        "apiKey": newsapi_key,
-        "from": "2025-08-03",
-        "to": "2025-09-02"
-    }
-    resp = requests.get(url, params=params)
-    resp.raise_for_status()
-    return resp.json()['articles']
 
 
 def fetch_cryptocompare_day(query="BTC", source="coindesk", date=None, per_day=2):
@@ -96,31 +79,54 @@ def save_mongo(data):
     print(f"Inserted {len(data)} documents into MongoDB")
 
 # main
+# main
 def main():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
     all_articles = []
+    seen_ids = set()
 
-    # newsapi
     try:
-        raw_newsapi = fetch_newsapi()
-        parsed_newsapi = [parse_newsapi(a) for a in raw_newsapi]
-        save_json(parsed_newsapi, "newsapi")
-        save_mongo(parsed_newsapi)
-        all_articles.extend(parsed_newsapi)
-    except Exception as e:
-        print(f"Error NewsAPI: {e}")
-
-    # cryptocompare
-    try:
-        parsed_crypto = fetch_historical_crypto(
-            query="BTC", source="cryptocompare", days_back=190, per_day=5, max_total=950
+        parsed_coindesk = fetch_historical_crypto(
+            query="BTC", source="coindesk", days_back=1000, per_day=8, max_total=8000
         )
-        save_json(parsed_crypto, "cryptocompare_historical")
-        save_mongo(parsed_crypto)
-        all_articles.extend(parsed_crypto)
-    except Exception as e:
-        print(f"Error CryptoCompare: {e}")
 
-    print(f"Total articles collected: {len(all_articles)}")
+        if parsed_coindesk:
+            save_json(parsed_coindesk, "coindesk_historical")
+            #save_mongo(parsed_coindesk)
+            logging.info(f"Coindesk: {len(parsed_coindesk)} artículos")
+            all_articles.extend(parsed_coindesk)
+        else:
+            logging.warning("No articles found in Coindesk.")
+
+    except Exception as e:
+        logging.error(f"Error fetching from Coindesk: {e}")
+
+    try:
+        parsed_cointelegraph = fetch_historical_crypto(
+            query="BTC", source="cointelegraph", days_back=1000, per_day=4, max_total=4000
+        )
+
+        if parsed_cointelegraph:
+            save_json(parsed_cointelegraph, "cointelegraph_historical")
+            #save_mongo(parsed_cointelegraph)
+            logging.info(f"Cointelegraph: {len(parsed_cointelegraph)} artículos")
+            all_articles.extend(parsed_cointelegraph)
+        else:
+            logging.warning("No articles found in Cointelegraph.")
+
+    except Exception as e:
+        logging.error(f"Error fetching from Cointelegraph: {e}")
+
+    deduped = []
+    for art in all_articles:
+        if art["id"] not in seen_ids:
+            seen_ids.add(art["id"])
+            deduped.append(art)
+
+    #save_json(deduped, "merged_news")
+    save_mongo(deduped)
+    logging.info(f"Total merged (deduped): {len(deduped)} artículos")
 
 if __name__ == "__main__":
     main()
