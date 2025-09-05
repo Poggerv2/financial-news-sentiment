@@ -78,7 +78,7 @@ def save_mongo(data):
     articles.insert_many(data)
     print(f"Inserted {len(data)} documents into MongoDB")
 
-# main
+
 # main
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -93,7 +93,7 @@ def main():
 
         if parsed_coindesk:
             save_json(parsed_coindesk, "coindesk_historical")
-            #save_mongo(parsed_coindesk)
+            save_mongo(parsed_coindesk)
             logging.info(f"Coindesk: {len(parsed_coindesk)} artículos")
             all_articles.extend(parsed_coindesk)
         else:
@@ -109,7 +109,7 @@ def main():
 
         if parsed_cointelegraph:
             save_json(parsed_cointelegraph, "cointelegraph_historical")
-            #save_mongo(parsed_cointelegraph)
+            save_mongo(parsed_cointelegraph)
             logging.info(f"Cointelegraph: {len(parsed_cointelegraph)} artículos")
             all_articles.extend(parsed_cointelegraph)
         else:
@@ -124,8 +124,8 @@ def main():
             seen_ids.add(art["id"])
             deduped.append(art)
 
-    #save_json(deduped, "merged_news")
-    save_mongo(deduped)
+    save_json(deduped, "merged_news")
+    save_mongo(deduped) 
     logging.info(f"Total merged (deduped): {len(deduped)} artículos")
 
 if __name__ == "__main__":
