@@ -1,4 +1,4 @@
-# Enterprise Financial Agent & Quant Trading System
+# Bussola | Enterprise Financial Agent & Quant Trading System
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)
@@ -6,7 +6,7 @@
 ![MLOps](https://img.shields.io/badge/MLflow-Tracking-blue?logo=mlflow)
 ![DataEng](https://img.shields.io/badge/Airflow_%7C_RabbitMQ-Event_Driven-red)
 
-An end-to-end B2B financial platform that bridges rigorous Quantitative Data Science with modern Generative AI. This system features a highly optimized predictive trading engine (LightGBM) audited by a Neurosymbolic LLM, combined with a multi-tenant conversational agent capable of semantic routing, real-time portfolio management, and news-based RAG.
+Bussola is an end-to-end B2B financial platform that bridges rigorous Quantitative Data Science with modern Generative AI. This system features a highly optimized predictive trading engine (LightGBM) audited by a Neurosymbolic LLM, combined with a multi-tenant conversational agent capable of semantic routing, real-time portfolio management, and news-based RAG.
 
 ## High-Level Cloud & Tech Stack
 * **Core API & Agents:** FastAPI, Python 3.11, LangChain (Custom Routers), Pydantic
@@ -23,7 +23,7 @@ An end-to-end B2B financial platform that bridges rigorous Quantitative Data Sci
 The predictive trading logic is decoupled into two environments: a rigorous laboratory for experimentation (`quant_engine/`) and an automated deployment pipeline for production.
 
 ### Data Science & Experimentation (The Lab)
-The quantitative research environment was built from scratch to prevent common time-series modeling pitfalls, such as look-ahead bias and data leakage. The entire pipeline is modular:
+Bussola's quantitative research environment was built from scratch to prevent common time-series modeling pitfalls, such as look-ahead bias and data leakage. The entire pipeline is modular:
 
 * **Data Ingestion (`download_history.py` & `external_features.py`):** 
   Automated retrieval of historical OHLCV data for a specific ETF universe (SPY, QQQ, DIA, GLD, TLT, IWM). Macroeconomic context is injected by computing the momentum of market fear (Log Returns of the CBOE VIX index).
@@ -103,7 +103,7 @@ The agent operates under a strict, hard-coded prompt constitution (`agent_skills
 
 ## 4. Event-Driven Data Engineering & Ingestion
 
-To feed both the Quantitative Engine and the GenAI Agent, the platform requires a massive, continuous influx of clean data. This is managed through a decoupled, event-driven architecture designed to handle high throughput without blocking the main API.
+To feed both the Quantitative Engine and the GenAI Agent, Bussola requires a massive, continuous influx of clean data. This is managed through a decoupled, event-driven architecture designed to handle high throughput without blocking the main API.
 
 ### The Macroeconomic News ETL Pipeline
 News ingestion relies on a robust Producer-Consumer architecture:
@@ -127,7 +127,7 @@ To feed the Quantitative Engine, a dedicated cronjob runs at `01:00 UTC` (post-m
 
 ## 5. Asynchronous Price Alerts System
 
-The platform features a real-time price monitoring system decoupled from the main API thread. Users can provision alerts via the Chat Agent (using Tool Calling) or directly via the `alerts` router.
+Bussola features a real-time price monitoring system decoupled from the main API thread. Users can provision alerts via the Chat Agent (using Tool Calling) or directly via the alerts router.
 
 * **Alert Worker Daemon (`alert_worker.py`):** A standalone Python process that acts as an infinite polling daemon. 
   * Every 60 seconds, it queries PostgreSQL for all `active` alerts across all users and tenants.
@@ -184,8 +184,8 @@ The system is designed as a decoupled, microservices-based infrastructure utiliz
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/YourUsername/genai_core_pipeline.git](https://github.com/YourUsername/genai_core_pipeline.git)
-   cd genai_core_pipeline
+   git clone https://github.com/YourUsername/Bussola.git
+   cd Bussola
    ```
 2. **Configure Environment Variables:**
     * Copy the example environment file and fill in your API keys and credentials.
